@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Good Morning, Eli</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui'] },
+          colors: {
+            ink: '#0a0a0f',
+          },
+          animation: {
+            'fade-in-up': 'fadeInUp 0.6s ease-out forwards',
+            'shimmer': 'shimmer 1.8s infinite linear',
+            'spin-slow': 'spin 2s linear infinite',
+            'pulse-glow': 'pulseGlow 2s ease-in-out infinite',
+          },
+          keyframes: {
+            fadeInUp: {
+              '0%': { opacity: '0', transform: 'translateY(16px)' },
+              '100%': { opacity: '1', transform: 'translateY(0)' }
+            },
+            shimmer: {
+              '0%': { backgroundPosition: '-1000px 0' },
+              '100%': { backgroundPosition: '1000px 0' }
+            },
+            pulseGlow: {
+              '0%, 100%': { boxShadow: '0 0 0 0 rgba(99,102,241,0.4)' },
+              '50%': { boxShadow: '0 0 0 8px rgba(99,102,241,0)' }
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/config.js"></script>
+</head>
+<body class="bg-ink text-slate-100 font-sans antialiased min-h-screen">
+  <!-- Background decoration -->
+  <div class="bg-decoration" aria-hidden="true">
+    <div class="bg-blob bg-blob-1"></div>
+    <div class="bg-blob bg-blob-2"></div>
+    <div class="bg-blob bg-blob-3"></div>
+  </div>
+
+  <!-- Top bar -->
+  <header class="relative z-10 px-6 lg:px-10 pt-6 pb-2 flex items-center justify-between">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 grid place-items-center shadow-lg">
+        <i data-lucide="sunrise" class="w-5 h-5 text-white"></i>
+      </div>
+      <div>
+        <p class="text-xs uppercase tracking-widest text-slate-400">Good Morning Eli</p>
+        <p class="text-sm text-slate-300" id="topbar-date">—</p>
+      </div>
+    </div>
+    <div class="flex items-center gap-2">
+      <button id="refresh-all" class="icon-btn group" title="Refresh all (r)">
+        <i data-lucide="refresh-cw" class="w-4 h-4 group-[.spinning]:animate-spin"></i>
+        <span class="hidden sm:inline text-sm">Refresh</span>
+      </button>
+      <div class="relative">
+        <button id="settings-btn" class="icon-btn" title="Settings">
+          <i data-lucide="settings" class="w-4 h-4"></i>
+        </button>
+        <div id="settings-menu" class="hidden absolute right-0 mt-2 w-72 card-base p-4 z-50 space-y-3">
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-slate-300">Theme</label>
+            <button id="theme-toggle" class="pill-btn">
+              <i data-lucide="moon" class="w-4 h-4"></i>
+              <span id="theme-label">Dark</span>
+            </button>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-slate-300">Units</label>
+            <div class="flex rounded-lg overflow-hidden border border-slate-700">
+              <button data-unit="imperial" class="unit-btn px-3 py-1 text-xs">°F</button>
+              <button data-unit="metric" class="unit-btn px-3 py-1 text-xs">°C</button>
+            </div>
+          </div>
+          <div class="flex items-center justify-between">
+            <label class="text-sm text-slate-300">Auto-refresh</label>
+            <select id="autorefresh-select" class="bg-slate-800 border border-slate-700 rounded-md text-xs px-2 py-1">
+              <option value="0">Off</option>
+              <option value="60000">1 min</option>
+              <option value="300000" selected>5 min</option>
+              <option value="900000">15 min</option>
+            </select>
+          </div>
+          <button id="manage-tickers-btn" class="w-full pill-btn justify-center">
+            <i data-lucide="list-plus" class="w-4 h-4"></i> Manage tickers
+          </button>
+          <button id="set-location-btn" class="w-full pill-btn justify-center">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Set location
+          </button>
+          <p class="text-[10px] text-slate-500 pt-1 border-t border-slate-800">Shortcuts: <kbd>r</kbd> refresh · <kbd>t</kbd> theme</p>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="relative z-10 px-6 lg:px-10 pb-12 max-w-[1600px] mx-auto">
+    <!-- ROW 1: HERO -->
+    <section id="hero-card" class="card-base p-7 lg:p-9 mb-6 stagger-card">
+      <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+        <div>
+          <h1 id="greeting" class="text-5xl lg:text-7xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 via-purple-400 to-pink-400">
+            Good morning, Eli
+          </h1>
+          <p class="mt-2 text-slate-400 text-lg">
+            <span id="hero-clock" class="tabular-nums font-semibold text-slate-200">—</span>
+            <span class="mx-2 text-slate-600">·</span>
+            <span id="hero-date">—</span>
+          </p>
+        </div>
+        <div class="flex flex-wrap gap-3">
+          <div id="hero-weather-pill" class="hero-pill"><i data-lucide="cloud" class="w-4 h-4"></i><span>—</span></div>
+          <div id="hero-market-pill" class="hero-pill"><i data-lucide="trending-up" class="w-4 h-4"></i><span>—</span></div>
+          <div id="hero-events-pill" class="hero-pill"><i data-lucide="calendar" class="w-4 h-4"></i><span>—</span></div>
+          <div id="hero-inbox-pill" class="hero-pill"><i data-lucide="mail" class="w-4 h-4"></i><span>—</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 2 -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+      <!-- Weather -->
+      <div id="weather-card" class="card-base p-6 lg:col-span-5 stagger-card" data-accent="sky">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <span class="accent-dot bg-sky-400"></span>
+            <h2 class="card-title">Weather</h2>
+            <span id="weather-location" class="text-xs text-slate-400 ml-2">—</span>
+          </div>
+          <div class="flex items-center gap-1">
+            <div class="flex rounded-md overflow-hidden border border-slate-700 text-xs">
+              <button data-unit="imperial" class="unit-btn px-2 py-1">°F</button>
+              <button data-unit="metric" class="unit-btn px-2 py-1">°C</button>
+            </div>
+            <button class="icon-btn-sm" data-refresh="weather"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+        <div id="weather-body" class="mt-2">
+          <div class="skeleton h-40 rounded-xl mb-3"></div>
+          <div class="skeleton h-24 rounded-xl mb-3"></div>
+          <div class="skeleton h-16 rounded-xl"></div>
+        </div>
+      </div>
+
+      <!-- World News -->
+      <div id="news-card" class="card-base p-6 lg:col-span-7 stagger-card" data-accent="rose">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <span class="accent-dot bg-rose-400"></span>
+            <h2 class="card-title">World News</h2>
+          </div>
+          <button class="icon-btn-sm" data-refresh="news"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div id="news-chips" class="flex flex-wrap gap-2 mt-3 mb-4"></div>
+        <div id="news-body" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div class="skeleton h-40 rounded-xl"></div>
+          <div class="skeleton h-40 rounded-xl"></div>
+          <div class="skeleton h-40 rounded-xl"></div>
+          <div class="skeleton h-40 rounded-xl"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 3 -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+      <!-- Stocks -->
+      <div id="stocks-card" class="card-base p-6 lg:col-span-7 stagger-card" data-accent="indigo">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <span class="accent-dot bg-indigo-400"></span>
+            <h2 class="card-title">Markets</h2>
+          </div>
+          <div class="flex items-center gap-2">
+            <div class="relative">
+              <input id="stock-search" type="text" placeholder="Filter…" class="bg-slate-800/80 border border-slate-700 rounded-md text-xs pl-7 pr-2 py-1.5 w-32 focus:outline-none focus:ring-1 focus:ring-indigo-400" />
+              <i data-lucide="search" class="w-3 h-3 absolute left-2 top-1/2 -translate-y-1/2 text-slate-500"></i>
+            </div>
+            <button class="icon-btn-sm" data-refresh="stocks"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+          </div>
+        </div>
+        <div id="stocks-summary" class="mt-3 grid grid-cols-3 gap-2 text-xs">
+          <div class="skeleton h-12 rounded-lg"></div>
+          <div class="skeleton h-12 rounded-lg"></div>
+          <div class="skeleton h-12 rounded-lg"></div>
+        </div>
+        <div class="mt-4 flex gap-2 border-b border-slate-800">
+          <button data-tab="positions" class="stock-tab tab-active">Positions</button>
+          <button data-tab="news" class="stock-tab">News</button>
+        </div>
+        <div id="stocks-body" class="mt-3">
+          <div class="skeleton h-64 rounded-xl"></div>
+        </div>
+      </div>
+
+      <!-- Calendar -->
+      <div id="calendar-card" class="card-base p-6 lg:col-span-5 stagger-card" data-accent="violet">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <span class="accent-dot bg-violet-400"></span>
+            <h2 class="card-title">Today</h2>
+            <span id="calendar-count" class="text-xs text-slate-400 ml-2"></span>
+          </div>
+          <button class="icon-btn-sm" data-refresh="calendar"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div id="calendar-body" class="mt-3">
+          <div class="skeleton h-20 rounded-xl mb-2"></div>
+          <div class="skeleton h-20 rounded-xl mb-2"></div>
+          <div class="skeleton h-20 rounded-xl"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 4 -->
+    <section class="grid grid-cols-1 gap-6 mb-6">
+      <div id="inbox-card" class="card-base p-6 stagger-card" data-accent="amber">
+        <div class="card-header">
+          <div class="flex items-center gap-2">
+            <span class="accent-dot bg-amber-400"></span>
+            <h2 class="card-title">Inbox highlights</h2>
+            <span id="inbox-count" class="text-xs text-slate-400 ml-2"></span>
+          </div>
+          <button class="icon-btn-sm" data-refresh="inbox"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
+        </div>
+        <div id="inbox-body" class="mt-4 flex gap-3 overflow-x-auto pb-2 inbox-scroll">
+          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
+          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
+          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="text-center text-xs text-slate-600 pt-2 pb-6">
+      goodmorningeli.netlify.app · Built with <i data-lucide="heart" class="w-3 h-3 inline text-rose-400"></i>
+    </footer>
+  </main>
+
+  <!-- Tickers modal -->
+  <div id="tickers-modal" class="modal-backdrop hidden">
+    <div class="modal-panel">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">Manage tickers</h3>
+        <button id="tickers-close" class="icon-btn-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <div class="flex gap-2 mb-3">
+        <input id="ticker-input" type="text" placeholder="Add ticker (e.g. MSFT)" class="flex-1 bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400 uppercase" />
+        <button id="ticker-add" class="pill-btn">Add</button>
+      </div>
+      <div id="ticker-list" class="flex flex-wrap gap-2 max-h-72 overflow-y-auto"></div>
+      <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+        <button id="tickers-reset" class="pill-btn text-slate-400">Reset to default</button>
+        <button id="tickers-save" class="pill-btn bg-indigo-500 hover:bg-indigo-400 text-white border-indigo-400">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Location modal -->
+  <div id="location-modal" class="modal-backdrop hidden">
+    <div class="modal-panel">
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="text-lg font-bold">Set location</h3>
+        <button id="location-close" class="icon-btn-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+      </div>
+      <p class="text-sm text-slate-400 mb-3">Allow geolocation, or enter coordinates manually.</p>
+      <button id="location-detect" class="w-full pill-btn justify-center mb-3"><i data-lucide="locate-fixed" class="w-4 h-4"></i> Detect my location</button>
+      <div class="grid grid-cols-2 gap-2">
+        <input id="lat-input" placeholder="Latitude" class="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm" />
+        <input id="lon-input" placeholder="Longitude" class="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm" />
+      </div>
+      <button id="location-save" class="w-full pill-btn justify-center mt-3 bg-indigo-500 hover:bg-indigo-400 text-white border-indigo-400">Save coordinates</button>
+    </div>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>

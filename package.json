@@ -1,0 +1,22 @@
+{
+  "name": "good-morning-eli",
+  "version": "1.0.0",
+  "description": "Personal morning dashboard: weather, stocks, calendar, inbox, news.",
+  "private": true,
+  "scripts": {
+    "dev": "netlify dev",
+    "build": "echo 'Static build — no compile step needed'",
+    "start": "netlify dev"
+  },
+  "dependencies": {
+    "yahoo-finance2": "^2.13.3",
+    "googleapis": "^144.0.0",
+    "rss-parser": "^3.13.0"
+  },
+  "devDependencies": {
+    "netlify-cli": "^17.0.0"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
