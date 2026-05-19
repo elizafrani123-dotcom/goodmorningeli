@@ -1,18 +1,15 @@
 // GET /api/stock-news?symbol=AAPL
-// Yahoo Finance news + naive keyword-based sentiment.
+// Uses Yahoo Finance public search endpoint directly (no library).
 
-const yahooFinance = require('yahoo-finance2').default;
 const { cors, json } = require('./_lib/cors');
 
 const CACHE = new Map(); // symbol -> { at, data }
 const TTL_MS = 5 * 60 * 1000; // 5 min
 
-const POSITIVE = ['beat', 'surge', 'rally', 'gain', 'upgrade', 'record', 'growth', 'strong', 'bullish', 'profit', 'win'];
-const NEGATIVE = ['miss', 'drop', 'fall', 'plunge', 'downgrade', 'loss', 'weak', 'bearish', 'lawsuit', 'probe', 'decline', 'cut'];
+const UA = 'Mozilla/5.0 (compatible; GoodMorningEli/1.0)';
 
-try {
-  yahooFinance.suppressNotices && yahooFinance.suppressNotices(['yahooSurvey', 'ripHistorical']);
-} catch (_) { /* noop */ }
+const POSITIVE = ['beat', 'surge', 'rally', 'gain', 'upgrade', 'record', 'growth', 'strong', 'bullish', 'profit', 'win', 'jump', 'soar'];
+const NEGATIVE = ['miss', 'drop', 'fall', 'plunge', 'downgrade', 'loss', 'weak', 'bearish', 'lawsuit', 'probe', 'decline', 'cut', 'slump', 'sink'];
 
 function classifySentiment(text) {
   const t = (text || '').toLowerCase();
@@ -47,8 +44,19 @@ exports.handler = cors(async (event) => {
   const cached = cacheGet(symbol);
   if (cached) return json(200, cached);
 
-  const result = await yahooFinance.search(symbol, { newsCount: 10, quotesCount: 0 });
-  const newsArr = (result && result.news) || [];
+  const url = `https://query2.finance.yahoo.com/v1/finance/search?q=${encodeURIComponent(symbol)}&newsCount=10&quotesCount=0&enableEnhancedTrivialQuery=false`;
+  let newsArr = [];
+  try {
+    const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'application/json' } });
+    if (res.ok) {
+      const data = await res.json();
+      newsArr = (data && data.news) || [];
+    } else {
+      console.warn('[stock-news] HTTP', res.status, 'for', symbol);
+    }
+  } catch (e) {
+    console.warn('[stock-news] fetch err:', e.message);
+  }
 
   const news = newsArr.map((n) => {
     const publishedAtSec = n.providerPublishTime;

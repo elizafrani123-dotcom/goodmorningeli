@@ -20,13 +20,13 @@ const TTL_MS = 10 * 60 * 1000; // 10 min
 
 const FEEDS = {
   Top: [
-    'https://feeds.reuters.com/reuters/topNews',
-    'https://feeds.apnews.com/apf-topnews',
-    'http://feeds.bbci.co.uk/news/rss.xml',
+    'https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml',
+    'https://feeds.skynews.com/feeds/rss/home.xml',
+    'https://www.theguardian.com/world/rss',
   ],
   Geopolitics: [
     'https://www.aljazeera.com/xml/rss/all.xml',
-    'http://feeds.bbci.co.uk/news/world/rss.xml',
+    'https://www.theguardian.com/world/rss',
   ],
   Israel: [
     'https://www.timesofisrael.com/feed/',
@@ -34,7 +34,7 @@ const FEEDS = {
   ],
   US: [
     'https://feeds.npr.org/1003/rss.xml',
-    'https://feeds.apnews.com/apf-usnews',
+    'https://rss.nytimes.com/services/xml/rss/nyt/US.xml',
   ],
   Tech: [
     'https://techcrunch.com/feed/',
@@ -42,7 +42,7 @@ const FEEDS = {
   ],
   Markets: [
     'https://search.cnbc.com/rss/2.0/?type=rssfeed&keyword=markets',
-    'https://feeds.reuters.com/reuters/businessNews',
+    'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml',
   ],
 };
 
