@@ -317,17 +317,23 @@
     if (!cont) return;
     const days = daily.slice(0, 7);
     if (!days.length) { cont.innerHTML = '<div class="text-xs text-slate-500">No forecast available.</div>'; return; }
-    const allTemps = days.flatMap(d => [d.high, d.low]).filter(v => v != null);
+    const allTemps = days.flatMap(d => [d.hi, d.lo]).filter(v => v != null);
     const minT = Math.min(...allTemps, 0);
     const maxT = Math.max(...allTemps, 1);
     const span = maxT - minT || 1;
+    const WEEKDAYS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     cont.innerHTML = days.map(d => {
-      const lo = d.low ?? 0, hi = d.high ?? 0;
+      const lo = d.lo ?? 0, hi = d.hi ?? 0;
       const left = ((lo - minT) / span) * 100;
       const width = Math.max(6, ((hi - lo) / span) * 100);
+      let dayLabel = '';
+      if (d.date) {
+        const parsed = new Date(d.date + 'T12:00:00');
+        if (!isNaN(parsed)) dayLabel = WEEKDAYS[parsed.getDay()];
+      }
       return `
         <div class="weather-day" title="${escapeHtml(d.conditions || '')}">
-          <div class="weather-day-label">${escapeHtml((d.day || '').slice(0, 3))}</div>
+          <div class="weather-day-label">${escapeHtml(dayLabel)}</div>
           <div class="weather-day-icon"><i data-lucide="${weatherIcon(d.icon, d.conditions)}"></i></div>
           <div class="weather-day-bar">
             <div class="weather-day-bar-fill" style="left:${left}%; width:${width}%;"></div>
