@@ -1,5 +1,6 @@
 // GET /api/calendar
-// Returns today + tomorrow's events from the user's primary Google Calendar.
+// v2: returns events for the 30 days before AND 30 days after today.
+// The frontend groups by date for a monthly view.
 
 const { google } = require('googleapis');
 const { cors, json } = require('./_lib/cors');
@@ -11,15 +12,19 @@ const {
   buildSetCookieHeader,
 } = require('./_lib/google-auth');
 
-function startOfTodayLocal() {
+const DAYS_BACK = 30;
+const DAYS_FORWARD = 30;
+
+function windowStart() {
   const d = new Date();
+  d.setDate(d.getDate() - DAYS_BACK);
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
-function endOfTomorrowLocal() {
+function windowEnd() {
   const d = new Date();
-  d.setDate(d.getDate() + 1);
+  d.setDate(d.getDate() + DAYS_FORWARD);
   d.setHours(23, 59, 59, 999);
   return d;
 }
@@ -40,8 +45,8 @@ exports.handler = cors(async (event) => {
   });
 
   const calendar = google.calendar({ version: 'v3', auth: client });
-  const timeMin = startOfTodayLocal().toISOString();
-  const timeMax = endOfTomorrowLocal().toISOString();
+  const timeMin = windowStart().toISOString();
+  const timeMax = windowEnd().toISOString();
 
   let resp;
   try {
@@ -51,7 +56,7 @@ exports.handler = cors(async (event) => {
       timeMax,
       singleEvents: true,
       orderBy: 'startTime',
-      maxResults: 50,
+      maxResults: 500,
     });
   } catch (err) {
     // If invalid_grant / 401, treat as unauthenticated.

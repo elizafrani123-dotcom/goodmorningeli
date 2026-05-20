@@ -23,8 +23,10 @@ function cacheSet(key, data) {
 }
 
 async function fetchChart(symbol) {
-  // 5-minute interval over 1 day gives us a sparkline plus meta with current price + previous close.
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=5m&range=1d&includePrePost=false`;
+  // v2: sparkline is now 30-day daily closes (was 5-min intraday).
+  // We still want regularMarketPrice for the headline price, but the chart series
+  // is now `interval=1d&range=1mo` for a smoother monthly trend line.
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?interval=1d&range=1mo`;
   const res = await fetch(url, { headers: { 'User-Agent': UA, 'Accept': 'application/json' } });
   if (!res.ok) throw new Error(`chart ${symbol} HTTP ${res.status}`);
   const data = await res.json();
@@ -34,7 +36,9 @@ async function fetchChart(symbol) {
   const quote = (result.indicators && result.indicators.quote && result.indicators.quote[0]) || {};
   const closes = (quote.close || []).filter((v) => typeof v === 'number');
   const price = meta.regularMarketPrice;
-  const prevClose = meta.chartPreviousClose != null ? meta.chartPreviousClose : meta.previousClose;
+  // For a 1mo daily series, chartPreviousClose is the price 1 month ago — we don't want that
+  // for "day change". Use previousClose (last trading day's close) instead.
+  const prevClose = meta.previousClose != null ? meta.previousClose : meta.chartPreviousClose;
   const change = price != null && prevClose != null ? price - prevClose : null;
   const changePct = change != null && prevClose ? (change / prevClose) * 100 : null;
   return {
@@ -48,7 +52,9 @@ async function fetchChart(symbol) {
     volume: meta.regularMarketVolume,
     marketCap: null, // not provided by chart endpoint
     currency: meta.currency,
-    sparkline: closes.slice(-60), // last ~5h of 5-min ticks, max
+    fiftyTwoWeekHigh: meta.fiftyTwoWeekHigh,
+    fiftyTwoWeekLow: meta.fiftyTwoWeekLow,
+    sparkline: closes, // last 30 daily closes
   };
 }
 

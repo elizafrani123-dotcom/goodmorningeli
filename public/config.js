@@ -13,6 +13,12 @@ window.DASHBOARD_CONFIG = {
     calendar: 5 * 60 * 1000,   //  5 min
     inbox:   5 * 60 * 1000     //  5 min
   },
-  newsCategories: ["Top", "Geopolitics", "Israel", "US", "Tech", "Markets"],
-  weatherUnits: "imperial" // imperial or metric
+  newsCategories: ["Top", "Geopolitics", "Israel", "US", "Tech", "Markets", "Real Estate"],
+  weatherUnits: "imperial", // imperial or metric
+  // Default saved cities — the user can edit these in "Manage cities".
+  defaultSavedCities: [
+    { label: "New York, NY, US", lat: 40.7128, lon: -74.0060, isCurrentLocation: false },
+    { label: "Miami, FL, US",    lat: 25.7617, lon: -80.1918, isCurrentLocation: false },
+    { label: "Tel Aviv, IL",     lat: 32.0853, lon: 34.7818,  isCurrentLocation: false }
+  ]
 };

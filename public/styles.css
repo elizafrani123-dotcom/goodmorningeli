@@ -466,6 +466,219 @@ kbd {
 @media (max-width: 768px) {
   .stock-row { grid-template-columns: 70px 1fr 80px 70px; }
   .stock-row .sparkline-cell { display: none; }
-  .weather-temp { font-size: 3rem; }
-  .weather-daily { grid-template-columns: repeat(7, minmax(40px, 1fr)); }
+  .weather-temp { font-size: 2.6rem; }
+  .weather-daily { grid-template-columns: repeat(7, minmax(34px, 1fr)); }
+  .stock-detail-grid { grid-template-columns: 1fr; }
 }
+
+/* ==========================================================================
+   v2 ADDITIONS — compact weather, monthly calendar, smarter inbox, accordion
+   ========================================================================== */
+
+/* ---- Weather v2 (compact) ---- */
+.weather-hero { gap: 0.9rem; padding: 0.25rem 0 0.75rem; }
+.weather-temp { font-size: 3rem; }
+.weather-temp-unit { font-size: 1.25rem; color: #94a3b8; font-weight: 600; margin-left: 2px; }
+.weather-icon-big { width: 56px; height: 56px; }
+.weather-icon-big i { width: 30px; height: 30px; }
+.weather-hourly { height: 78px; }
+.weather-section-label {
+  font-size: 0.62rem; text-transform: uppercase; letter-spacing: 0.12em;
+  color: #64748b; margin: 0.7rem 0 0.35rem;
+}
+.weather-daily { gap: 0.3rem; padding-top: 0.15rem; }
+.weather-day { padding: 0.45rem 0.15rem; }
+.weather-day-icon { display: grid; place-items: center; margin: 0.2rem 0; }
+.weather-day-icon i { width: 16px; height: 16px; color: #7dd3fc; }
+.weather-day-temp { display: flex; justify-content: center; gap: 0.3rem; }
+.sun-progress { margin-top: 0.7rem; padding-top: 0.7rem; }
+
+/* ---- Weather city dropdown ---- */
+.city-menu-item {
+  display: flex; align-items: center; gap: 0.5rem; width: 100%;
+  padding: 0.5rem 0.6rem; border-radius: 0.5rem;
+  font-size: 0.8rem; color: #cbd5e1; cursor: pointer;
+  background: transparent; border: none; text-align: left;
+  transition: background 0.12s ease;
+}
+.city-menu-item:hover { background: rgba(56,189,248,0.1); }
+.city-menu-item.active { background: rgba(56,189,248,0.14); color: #7dd3fc; }
+.city-menu-manage {
+  border-top: 1px solid rgba(148,163,184,0.12); margin-top: 0.25rem;
+  color: #94a3b8;
+}
+.city-list-row {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.45rem 0.5rem; border-radius: 0.5rem;
+  background: rgba(30,41,59,0.5); border: 1px solid rgba(148,163,184,0.1);
+}
+.city-suggestion {
+  display: block; width: 100%; text-align: left;
+  padding: 0.5rem 0.75rem; font-size: 0.82rem; color: #cbd5e1;
+  background: transparent; border: none; cursor: pointer;
+  transition: background 0.12s ease;
+}
+.city-suggestion:hover { background: rgba(99,102,241,0.15); }
+
+/* ---- Markets summary tiles ---- */
+.summary-tile {
+  border-radius: 0.6rem; background: rgba(30,41,59,0.5);
+  border: 1px solid rgba(148,163,184,0.12); padding: 0.5rem 0.65rem;
+}
+.summary-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 0.1em; color: #64748b; }
+.summary-value { font-weight: 700; font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+
+/* ---- Markets table header row ---- */
+.stock-row-head { cursor: default; border: 0; padding: 0.25rem 0.5rem; }
+.stock-row-head:hover { background: transparent; border-color: transparent; }
+
+/* ---- Stock detail panel v2 ---- */
+.stock-detail-grid {
+  display: grid; grid-template-columns: 1fr 200px; gap: 1rem;
+}
+.stock-detail-chart { height: 240px; }
+.stock-detail-stats {
+  display: flex; flex-direction: column; gap: 0.1rem;
+  font-size: 0.78rem;
+}
+.stat-price { font-size: 1.7rem; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.stat-row {
+  display: flex; justify-content: space-between;
+  padding: 0.28rem 0; border-bottom: 1px solid rgba(148,163,184,0.08);
+  color: #94a3b8;
+}
+.stat-row span:last-child { color: #e2e8f0; font-variant-numeric: tabular-nums; font-weight: 600; }
+
+/* ---- Monthly calendar ---- */
+.cal-today {
+  background: rgba(167,139,250,0.08);
+  border: 1px solid rgba(167,139,250,0.2);
+  border-radius: 0.6rem; padding: 0.6rem 0.75rem; margin-bottom: 0.75rem;
+}
+.cal-today-head {
+  font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.1em;
+  color: #c4b5fd; font-weight: 700; margin-bottom: 0.35rem;
+}
+.cal-today-row {
+  display: flex; gap: 0.6rem; font-size: 0.8rem; color: #e2e8f0;
+  padding: 0.12rem 0;
+}
+.cal-today-time { color: #c4b5fd; font-variant-numeric: tabular-nums; min-width: 62px; flex-shrink: 0; }
+.cal-today-empty {
+  display: flex; align-items: center; gap: 0.5rem;
+  font-size: 0.82rem; color: #94a3b8;
+}
+.cal-today-empty i { color: #c4b5fd; }
+
+.cal-nav {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+.cal-month-label {
+  font-weight: 700; font-size: 0.95rem; color: #e2e8f0;
+  background: transparent; border: none; cursor: pointer;
+  padding: 0.25rem 0.6rem; border-radius: 0.4rem; transition: background 0.12s ease;
+}
+.cal-month-label:hover { background: rgba(167,139,250,0.12); color: #c4b5fd; }
+
+.cal-grid {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;
+}
+.cal-daynames { margin-bottom: 2px; }
+.cal-dayname {
+  text-align: center; font-size: 0.62rem; font-weight: 600;
+  text-transform: uppercase; color: #64748b; padding: 0.2rem 0;
+}
+.cal-day {
+  position: relative; aspect-ratio: 1 / 1;
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start;
+  padding: 0.3rem 0.1rem 0.1rem;
+  background: rgba(30,41,59,0.35);
+  border: 1px solid transparent; border-radius: 0.45rem;
+  cursor: pointer; transition: background 0.12s ease, border-color 0.12s ease;
+}
+.cal-day:hover { background: rgba(167,139,250,0.12); }
+.cal-day.other-month { opacity: 0.35; }
+.cal-day.today { border-color: #a78bfa; box-shadow: 0 0 0 1px rgba(167,139,250,0.4) inset; }
+.cal-day.selected { background: rgba(167,139,250,0.22); border-color: rgba(167,139,250,0.5); }
+.cal-day.has-events .cal-day-num { color: #e2e8f0; font-weight: 700; }
+.cal-day-num { font-size: 0.78rem; color: #cbd5e1; font-variant-numeric: tabular-nums; }
+.cal-dots { display: flex; gap: 2px; margin-top: auto; padding-bottom: 2px; align-items: center; min-height: 6px; }
+.cal-dot { width: 5px; height: 5px; border-radius: 9999px; background: #a78bfa; }
+.cal-dot-more { font-size: 0.55rem; color: #c4b5fd; line-height: 1; }
+
+.cal-day-panel {
+  margin-top: 0.85rem; padding-top: 0.75rem;
+  border-top: 1px solid rgba(148,163,184,0.12);
+}
+.cal-panel-head {
+  font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  color: #c4b5fd; font-weight: 700; margin-bottom: 0.5rem;
+}
+.cal-event {
+  display: grid; grid-template-columns: 96px 1fr; gap: 0.6rem;
+  padding: 0.5rem; border-radius: 0.5rem;
+  background: rgba(15,23,42,0.5); border: 1px solid rgba(148,163,184,0.1);
+  border-left: 3px solid #a78bfa; margin-bottom: 0.4rem;
+}
+.cal-event:hover { background: rgba(167,139,250,0.08); }
+.cal-event-time { font-size: 0.72rem; color: #c4b5fd; font-variant-numeric: tabular-nums; }
+.cal-event-title { font-weight: 600; font-size: 0.85rem; }
+.cal-event-meta { font-size: 0.7rem; color: #94a3b8; display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.2rem; }
+.cal-event-desc {
+  margin-top: 0.4rem; padding-top: 0.4rem;
+  border-top: 1px dashed rgba(148,163,184,0.15);
+  font-size: 0.75rem; color: #cbd5e1; white-space: pre-wrap;
+}
+
+/* ---- Inbox v2 cards ---- */
+.inbox-card {
+  width: 100%; flex-shrink: 1;
+  gap: 0.4rem;
+}
+.inbox-card-top { display: flex; align-items: center; gap: 0.5rem; }
+.inbox-time { margin-left: auto; font-size: 0.68rem; color: #64748b; }
+.inbox-sender { font-size: 0.78rem; color: #cbd5e1; font-weight: 600; }
+.inbox-email { color: #64748b; font-weight: 400; font-size: 0.72rem; }
+.inbox-subject {
+  font-weight: 700; font-size: 0.88rem; color: #e2e8f0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.inbox-snippet {
+  font-size: 0.76rem; color: #94a3b8; line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.inbox-actions { display: flex; flex-wrap: wrap; gap: 0.35rem; margin-top: 0.15rem; }
+.action-chip {
+  display: inline-flex; align-items: center; gap: 0.25rem;
+  font-size: 0.68rem; font-weight: 600;
+  padding: 0.18rem 0.5rem; border-radius: 9999px;
+  background: rgba(249,115,22,0.14); color: #fdba74;
+  border: 1px solid rgba(249,115,22,0.3);
+}
+.action-chip i { width: 11px; height: 11px; }
+
+/* Category chip color variants */
+.category-chip.cat-action { background: rgba(239,68,68,0.14); color: #fca5a5; }
+.category-chip.cat-finance { background: rgba(16,185,129,0.14); color: #6ee7b7; }
+.category-chip.cat-work { background: rgba(99,102,241,0.14); color: #a5b4fc; }
+.category-chip.cat-personal { background: rgba(167,139,250,0.14); color: #c4b5fd; }
+.category-chip.cat-notification { background: rgba(148,163,184,0.14); color: #cbd5e1; }
+
+/* ---- News accordion ---- */
+.news-accordion #news-header { cursor: pointer; }
+#news-chevron { transition: transform 0.2s ease; }
+.news-badge {
+  font-size: 0.68rem; font-weight: 700;
+  background: rgba(251,113,133,0.15); color: #fda4af;
+  border-radius: 9999px; padding: 0.1rem 0.5rem;
+}
+
+/* light-theme touch-ups for v2 components */
+html.light .summary-tile,
+html.light .city-list-row,
+html.light .cal-day { background: rgba(241,245,249,0.8); }
+html.light .cal-day-num { color: #0f172a; }
+html.light .cal-event,
+html.light .stock-detail { background: rgba(255,255,255,0.85); }
+html.light .weather-temp-unit { color: #475569; }

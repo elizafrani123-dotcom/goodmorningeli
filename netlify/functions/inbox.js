@@ -1,5 +1,14 @@
 // GET /api/inbox
-// Returns top ~12 important emails from the last day, with importance + category.
+// v2: heuristic scoring + action item extraction.
+//
+// For each message we compute:
+//   - score: numeric importance score (see scoreEmail)
+//   - importance: "high" (>=5) / "medium" (2-4) / "low" (else)
+//   - category: "Action Required" / "Finance" / "Work" / "Personal" / "Notification"
+//   - actionItems: short string array surfaced as orange pill chips
+//
+// We pull last 50 messages from INBOX, score, and return top 8 by score
+// (must score > 0 OR be unread+IMPORTANT).
 
 const { google } = require('googleapis');
 const { cors, json } = require('./_lib/cors');
@@ -11,14 +20,32 @@ const {
   buildSetCookieHeader,
 } = require('./_lib/google-auth');
 
-const HIGH_KEYWORDS = ['urgent', 'action required', 'asap', 'today', 'due', 'payment'];
-const ACTION_KEYWORDS = ['action', 'required', 'verify', 'confirm'];
-const FINANCE_DOMAINS = ['chase.com', 'schwab.com', 'paypal.com', 'fidelity.com', 'vanguard.com'];
-const MARKETING_KEYWORDS = ['unsubscribe', 'newsletter', 'promo', 'deal', 'sale', '% off', 'limited time'];
+// ---------- Heuristics ----------
+const URGENT_PHRASES = [
+  'action required', 'please respond', 'deadline', 'due by',
+  'asap', 'urgent', 'important', 'needs your attention',
+  'by today', 'by tomorrow',
+];
+const DAY_OF_WEEK_RE = /\bby\s+(mon|tue|tues|wed|wedn|thu|thur|thurs|fri|sat|sun)(day|nesday|sday|nday|rday|urday)?\b/i;
+const MONEY_RE = /\$\s?[\d,]+(?:\.\d+)?/;
+const FINANCE_KEYWORDS = ['invoice', 'payment', 'statement', 'balance', 'transaction', 'due', 'pay by', 'amount due'];
+const REVIEW_KEYWORDS = ['review', 'approve', 'approval', 'sign off', 'signoff'];
+const MEETING_KEYWORDS = ['meeting', 'meet', 'call', 'invite', 'rsvp', 'calendar'];
+const NEGATIVE_KEYWORDS = ['unsubscribe', 'newsletter', '% off', 'deal alert', 'promotional'];
+const DATE_FORMAT_RE = /\b(?:jan|feb|mar|apr|may|jun|jul|aug|sep|sept|oct|nov|dec)[a-z]*\.?\s+\d{1,2}(?:st|nd|rd|th)?\b|\b\d{1,2}\/\d{1,2}(?:\/\d{2,4})?\b/i;
+
+// Lower-cased sender-domain substrings that suppress the score.
+const NOISE_DOMAINS = [
+  'mailchimp.com', 'hubspot.com', 'github.com', 'linkedin.com',
+  'slack.com', 'intercom-mail.com', 'mailer-daemon', 'sendgrid.net',
+  'marketo.com', 'eloqua.com', 'salesforce.com',
+];
+// Sender-mailbox prefixes that also count as noise.
+const NOISE_PREFIXES = [/^no[-_]?reply@/i, /^noreply@/i, /^donotreply@/i, /^notifications?@/i, /^alerts?@/i, /^mailer-daemon/i];
+const PERSONAL_DOMAINS = ['gmail.com', 'yahoo.com', 'hotmail.com', 'outlook.com', 'icloud.com', 'me.com', 'aol.com'];
 
 function parseFromHeader(fromHeader) {
   if (!fromHeader) return { name: null, email: null };
-  // "Display Name" <email@example.com>  OR  email@example.com
   const m = fromHeader.match(/^\s*"?([^"<]+?)"?\s*<([^>]+)>\s*$/);
   if (m) return { name: m[1].trim(), email: m[2].trim().toLowerCase() };
   const trimmed = fromHeader.trim();
@@ -32,37 +59,17 @@ function domainOf(email) {
   return idx === -1 ? '' : email.slice(idx + 1).toLowerCase();
 }
 
-function looksLikeBrand(email, name) {
+function isNoiseSender(email) {
+  if (!email) return false;
   const d = domainOf(email);
-  if (!d) return false;
-  // common transactional/marketing patterns
-  if (/^(no[-_]?reply|noreply|donotreply|notifications?|alerts?|info|hello|team|support|news|updates|mailer|marketing)@/i.test(email)) return true;
-  if (/^(bounce|mailer-daemon)/i.test(email)) return true;
+  if (NOISE_DOMAINS.some((nd) => d === nd || d.endsWith('.' + nd))) return true;
+  if (NOISE_PREFIXES.some((re) => re.test(email))) return true;
   return false;
 }
 
-function scoreImportance({ subject, from, labelIds }) {
-  const subj = (subject || '').toLowerCase();
-  if (Array.isArray(labelIds) && labelIds.includes('STARRED')) return 'high';
-  for (const kw of HIGH_KEYWORDS) {
-    if (subj.includes(kw)) return 'high';
-  }
-  if (!looksLikeBrand(from.email, from.name)) {
-    const isMarketing = MARKETING_KEYWORDS.some((kw) => subj.includes(kw));
-    if (!isMarketing) return 'medium';
-  }
-  return 'low';
-}
-
-function categorize({ subject, from }) {
-  const subj = (subject || '').toLowerCase();
-  const d = domainOf(from.email);
-  if (FINANCE_DOMAINS.some((fd) => d === fd || d.endsWith('.' + fd))) return 'Finance';
-  if (ACTION_KEYWORDS.some((kw) => subj.includes(kw))) return 'Action';
-  // Personal: gmail/yahoo/outlook free domains + non-brand sender.
-  const personalDomains = ['gmail.com', 'yahoo.com', 'outlook.com', 'hotmail.com', 'icloud.com', 'me.com'];
-  if (personalDomains.includes(d) && !looksLikeBrand(from.email, from.name)) return 'Personal';
-  return 'Work';
+function isPersonalDomain(email) {
+  const d = domainOf(email);
+  return PERSONAL_DOMAINS.includes(d);
 }
 
 function headerValue(headers, name) {
@@ -71,6 +78,113 @@ function headerValue(headers, name) {
   return h ? h.value : null;
 }
 
+// Extract a haystack of text from subject + snippet for keyword tests.
+function haystack(subject, snippet) {
+  return `${subject || ''} ${snippet || ''}`.toLowerCase();
+}
+
+function findDollarAmount(text) {
+  const m = text && text.match(MONEY_RE);
+  return m ? m[0].replace(/\s+/g, '') : null;
+}
+
+function findDayOfWeek(text) {
+  const m = text && text.match(DAY_OF_WEEK_RE);
+  if (!m) return null;
+  const map = { mon: 'Monday', tue: 'Tuesday', tues: 'Tuesday', wed: 'Wednesday', wedn: 'Wednesday',
+                thu: 'Thursday', thur: 'Thursday', thurs: 'Thursday', fri: 'Friday', sat: 'Saturday', sun: 'Sunday' };
+  return map[m[1].toLowerCase()] || null;
+}
+
+function scoreEmail({ subject, snippet, from, labelIds, receivedAt }) {
+  const text = haystack(subject, snippet);
+  let score = 0;
+
+  // +3: urgent phrases
+  if (URGENT_PHRASES.some((p) => text.includes(p)) || DAY_OF_WEEK_RE.test(text)) score += 3;
+  // +2: dollar amount detected
+  const dollar = findDollarAmount(text);
+  if (dollar) score += 2;
+  // +2: Gmail IMPORTANT label
+  if (Array.isArray(labelIds) && labelIds.includes('IMPORTANT')) score += 2;
+  // +2: unread AND received in last 24h
+  const isUnread = Array.isArray(labelIds) && labelIds.includes('UNREAD');
+  const ageMs = receivedAt ? Date.now() - Date.parse(receivedAt) : Infinity;
+  if (isUnread && isFinite(ageMs) && ageMs < 24 * 3600 * 1000) score += 2;
+  // +1: question mark in subject
+  if (subject && subject.includes('?')) score += 1;
+  // +1: a recognizable date (next 7 days mentioned)
+  if (DATE_FORMAT_RE.test(text)) score += 1;
+  // -2: noise sender domain
+  if (isNoiseSender(from.email)) score -= 2;
+  // -3: promotional subject words
+  if (NEGATIVE_KEYWORDS.some((k) => text.includes(k))) score -= 3;
+
+  return { score, dollar, isUnread };
+}
+
+function extractActionItems({ subject, snippet, dollar }) {
+  const text = haystack(subject, snippet);
+  const items = [];
+
+  // Respond by [day]
+  const respondMatch = text.match(/(?:respond|reply|get back)\s+(?:to me\s+)?by\s+([a-z]+)/i);
+  if (respondMatch) {
+    const day = respondMatch[1].charAt(0).toUpperCase() + respondMatch[1].slice(1);
+    items.push(`Respond by ${day}`);
+  } else {
+    const dow = findDayOfWeek(text);
+    if (dow && /respond|reply/.test(text)) items.push(`Respond by ${dow}`);
+  }
+
+  // $X due (dollar amount + finance words)
+  if (dollar && FINANCE_KEYWORDS.some((k) => text.includes(k))) {
+    items.push(`${dollar} due`);
+  } else if (dollar && /invoice|payment|balance/.test(text)) {
+    items.push(`${dollar} due`);
+  }
+
+  // Review/approve
+  if (REVIEW_KEYWORDS.some((k) => text.includes(k))) {
+    items.push('Review and approve');
+  }
+
+  // Meeting on [date]
+  if (MEETING_KEYWORDS.some((k) => text.includes(k))) {
+    const dateMatch = text.match(DATE_FORMAT_RE);
+    if (dateMatch) items.push(`Meeting on ${dateMatch[0]}`);
+  }
+
+  // Deduplicate while preserving order, cap at 3.
+  const seen = new Set();
+  const out = [];
+  for (const it of items) {
+    const k = it.toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(it);
+    if (out.length >= 3) break;
+  }
+  return out;
+}
+
+function categorize({ score, dollar, subject, snippet, from }) {
+  const text = haystack(subject, snippet);
+  if (score >= 5) return 'Action Required';
+  if (dollar || FINANCE_KEYWORDS.some((k) => text.includes(k))) return 'Finance';
+  if (score <= 0) return 'Notification';
+  if (isPersonalDomain(from.email)) return 'Personal';
+  // Corporate-looking domain that isn't a free email host => Work.
+  return 'Work';
+}
+
+function importanceFromScore(score) {
+  if (score >= 5) return 'high';
+  if (score >= 2) return 'medium';
+  return 'low';
+}
+
+// ---------- Handler ----------
 exports.handler = cors(async (event) => {
   const tokens = getTokensFromEvent(event);
   if (!tokens) {
@@ -89,8 +203,8 @@ exports.handler = cors(async (event) => {
   try {
     listResp = await gmail.users.messages.list({
       userId: 'me',
-      q: 'newer_than:1d -category:promotions -category:social -category:updates -from:noreply',
-      maxResults: 25,
+      labelIds: ['INBOX'],
+      maxResults: 50,
     });
   } catch (err) {
     const code = err && (err.code || (err.response && err.response.status));
@@ -112,7 +226,7 @@ exports.handler = cors(async (event) => {
     )
   );
 
-  const highlights = [];
+  const scored = [];
   for (const r of details) {
     if (r.status !== 'fulfilled' || !r.value || !r.value.data) continue;
     const msg = r.value.data;
@@ -122,9 +236,6 @@ exports.handler = cors(async (event) => {
     const dateHeader = headerValue(headers, 'Date');
     const from = parseFromHeader(fromHeader);
 
-    const importance = scoreImportance({ subject, from, labelIds: msg.labelIds });
-    const category = categorize({ subject, from });
-
     let receivedAt = null;
     if (msg.internalDate) {
       receivedAt = new Date(Number(msg.internalDate)).toISOString();
@@ -133,28 +244,40 @@ exports.handler = cors(async (event) => {
       if (!isNaN(t)) receivedAt = new Date(t).toISOString();
     }
 
-    highlights.push({
-      from: from.name ? `${from.name} <${from.email || ''}>` : (from.email || fromHeader || ''),
+    const labelIds = msg.labelIds || [];
+    const snippet = msg.snippet || '';
+    const { score, dollar, isUnread } = scoreEmail({ subject, snippet, from, labelIds, receivedAt });
+    const actionItems = extractActionItems({ subject, snippet, dollar });
+    const category = categorize({ score, dollar, subject, snippet, from });
+    const importance = importanceFromScore(score);
+
+    // Inclusion rule: score > 0 OR (unread AND IMPORTANT label).
+    const isImportantUnread = isUnread && labelIds.includes('IMPORTANT');
+    if (score <= 0 && !isImportantUnread) continue;
+
+    scored.push({
+      from: from.name || from.email || fromHeader || '',
+      fromEmail: from.email || null,
       subject: subject || '(no subject)',
-      snippet: msg.snippet || '',
+      snippet,
       receivedAt,
+      score,
       importance,
       category,
+      actionItems,
       threadUrl: msg.threadId ? `https://mail.google.com/mail/u/0/#inbox/${msg.threadId}` : null,
     });
   }
 
-  // Rank: high > medium > low, then by receivedAt desc.
-  const rank = { high: 0, medium: 1, low: 2 };
-  highlights.sort((a, b) => {
-    const r = rank[a.importance] - rank[b.importance];
-    if (r !== 0) return r;
+  // Sort: highest score first, then newest first.
+  scored.sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
     const ta = a.receivedAt ? Date.parse(a.receivedAt) : 0;
     const tb = b.receivedAt ? Date.parse(b.receivedAt) : 0;
     return tb - ta;
   });
 
-  const out = { authenticated: true, highlights: highlights.slice(0, 12) };
+  const out = { authenticated: true, highlights: scored.slice(0, 8) };
   const headers = {};
   if (refreshed) {
     headers['Set-Cookie'] = buildSetCookieHeader(cookieFromTokens(refreshed));

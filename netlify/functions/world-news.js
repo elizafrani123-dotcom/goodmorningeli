@@ -44,6 +44,13 @@ const FEEDS = {
     'https://search.cnbc.com/rss/2.0/?type=rssfeed&keyword=markets',
     'https://rss.nytimes.com/services/xml/rss/nyt/Business.xml',
   ],
+  'Real Estate': [
+    'https://www.inman.com/feed/',
+    'https://therealdeal.com/feed/',
+    'https://www.bisnow.com/rss-feed',
+    'https://www.housingwire.com/feed/',
+    'https://www.mortgagenewsdaily.com/rss/all',
+  ],
 };
 
 function cacheGet(key) {

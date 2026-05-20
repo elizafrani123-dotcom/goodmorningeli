@@ -101,8 +101,8 @@
           <button id="manage-tickers-btn" class="w-full pill-btn justify-center">
             <i data-lucide="list-plus" class="w-4 h-4"></i> Manage tickers
           </button>
-          <button id="set-location-btn" class="w-full pill-btn justify-center">
-            <i data-lucide="map-pin" class="w-4 h-4"></i> Set location
+          <button id="manage-cities-btn" class="w-full pill-btn justify-center">
+            <i data-lucide="map-pin" class="w-4 h-4"></i> Manage cities
           </button>
           <p class="text-[10px] text-slate-500 pt-1 border-t border-slate-800">Shortcuts: <kbd>r</kbd> refresh · <kbd>t</kbd> theme</p>
         </div>
@@ -111,7 +111,7 @@
   </header>
 
   <main class="relative z-10 px-6 lg:px-10 pb-12 max-w-[1600px] mx-auto">
-    <!-- ROW 1: HERO -->
+    <!-- ROW 1: HERO (col-12) -->
     <section id="hero-card" class="card-base p-7 lg:p-9 mb-6 stagger-card">
       <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
         <div>
@@ -133,17 +133,23 @@
       </div>
     </section>
 
-    <!-- ROW 2 -->
+    <!-- ROW 2: Weather (col-4) | Markets (col-8) -->
     <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-      <!-- Weather -->
-      <div id="weather-card" class="card-base p-6 lg:col-span-5 stagger-card" data-accent="sky">
+      <!-- Weather (compact) -->
+      <div id="weather-card" class="card-base p-5 lg:col-span-4 stagger-card" data-accent="sky">
         <div class="card-header">
-          <div class="flex items-center gap-2">
+          <div class="flex items-center gap-2 min-w-0 flex-1">
             <span class="accent-dot bg-sky-400"></span>
-            <h2 class="card-title">Weather</h2>
-            <span id="weather-location" class="text-xs text-slate-400 ml-2">—</span>
+            <div class="relative flex-1 min-w-0">
+              <button id="weather-city-btn" class="pill-btn !py-1 !px-2 text-xs max-w-full">
+                <i data-lucide="map-pin" class="w-3.5 h-3.5 flex-shrink-0"></i>
+                <span id="weather-city-label" class="truncate">—</span>
+                <i data-lucide="chevron-down" class="w-3 h-3 flex-shrink-0"></i>
+              </button>
+              <div id="weather-city-menu" class="hidden absolute left-0 mt-1 w-64 card-base p-2 z-40 max-h-72 overflow-y-auto"></div>
+            </div>
           </div>
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1 flex-shrink-0">
             <div class="flex rounded-md overflow-hidden border border-slate-700 text-xs">
               <button data-unit="imperial" class="unit-btn px-2 py-1">°F</button>
               <button data-unit="metric" class="unit-btn px-2 py-1">°C</button>
@@ -151,36 +157,15 @@
             <button class="icon-btn-sm" data-refresh="weather"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
-        <div id="weather-body" class="mt-2">
-          <div class="skeleton h-40 rounded-xl mb-3"></div>
-          <div class="skeleton h-24 rounded-xl mb-3"></div>
-          <div class="skeleton h-16 rounded-xl"></div>
+        <div id="weather-body" class="mt-3">
+          <div class="skeleton h-20 rounded-xl mb-2"></div>
+          <div class="skeleton h-16 rounded-xl mb-2"></div>
+          <div class="skeleton h-12 rounded-xl"></div>
         </div>
       </div>
 
-      <!-- World News -->
-      <div id="news-card" class="card-base p-6 lg:col-span-7 stagger-card" data-accent="rose">
-        <div class="card-header">
-          <div class="flex items-center gap-2">
-            <span class="accent-dot bg-rose-400"></span>
-            <h2 class="card-title">World News</h2>
-          </div>
-          <button class="icon-btn-sm" data-refresh="news"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
-        </div>
-        <div id="news-chips" class="flex flex-wrap gap-2 mt-3 mb-4"></div>
-        <div id="news-body" class="grid grid-cols-1 md:grid-cols-2 gap-3">
-          <div class="skeleton h-40 rounded-xl"></div>
-          <div class="skeleton h-40 rounded-xl"></div>
-          <div class="skeleton h-40 rounded-xl"></div>
-          <div class="skeleton h-40 rounded-xl"></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ROW 3 -->
-    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-      <!-- Stocks -->
-      <div id="stocks-card" class="card-base p-6 lg:col-span-7 stagger-card" data-accent="indigo">
+      <!-- Markets -->
+      <div id="stocks-card" class="card-base p-6 lg:col-span-8 stagger-card" data-accent="indigo">
         <div class="card-header">
           <div class="flex items-center gap-2">
             <span class="accent-dot bg-indigo-400"></span>
@@ -194,7 +179,7 @@
             <button class="icon-btn-sm" data-refresh="stocks"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
           </div>
         </div>
-        <div id="stocks-summary" class="mt-3 grid grid-cols-3 gap-2 text-xs">
+        <div id="stocks-summary" class="mt-3 grid grid-cols-2 md:grid-cols-3 gap-2 text-xs">
           <div class="skeleton h-12 rounded-lg"></div>
           <div class="skeleton h-12 rounded-lg"></div>
           <div class="skeleton h-12 rounded-lg"></div>
@@ -207,28 +192,27 @@
           <div class="skeleton h-64 rounded-xl"></div>
         </div>
       </div>
+    </section>
 
-      <!-- Calendar -->
-      <div id="calendar-card" class="card-base p-6 lg:col-span-5 stagger-card" data-accent="violet">
+    <!-- ROW 3: Calendar (col-7) | Inbox (col-5) -->
+    <section class="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+      <!-- Calendar (monthly) -->
+      <div id="calendar-card" class="card-base p-6 lg:col-span-7 stagger-card" data-accent="violet">
         <div class="card-header">
           <div class="flex items-center gap-2">
             <span class="accent-dot bg-violet-400"></span>
-            <h2 class="card-title">Today</h2>
+            <h2 class="card-title">Calendar</h2>
             <span id="calendar-count" class="text-xs text-slate-400 ml-2"></span>
           </div>
           <button class="icon-btn-sm" data-refresh="calendar"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
         </div>
         <div id="calendar-body" class="mt-3">
-          <div class="skeleton h-20 rounded-xl mb-2"></div>
-          <div class="skeleton h-20 rounded-xl mb-2"></div>
-          <div class="skeleton h-20 rounded-xl"></div>
+          <div class="skeleton h-80 rounded-xl"></div>
         </div>
       </div>
-    </section>
 
-    <!-- ROW 4 -->
-    <section class="grid grid-cols-1 gap-6 mb-6">
-      <div id="inbox-card" class="card-base p-6 stagger-card" data-accent="amber">
+      <!-- Inbox -->
+      <div id="inbox-card" class="card-base p-6 lg:col-span-5 stagger-card" data-accent="amber">
         <div class="card-header">
           <div class="flex items-center gap-2">
             <span class="accent-dot bg-amber-400"></span>
@@ -237,10 +221,38 @@
           </div>
           <button class="icon-btn-sm" data-refresh="inbox"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></button>
         </div>
-        <div id="inbox-body" class="mt-4 flex gap-3 overflow-x-auto pb-2 inbox-scroll">
-          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
-          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
-          <div class="skeleton h-40 w-72 flex-shrink-0 rounded-xl"></div>
+        <div id="inbox-body" class="mt-3 space-y-2">
+          <div class="skeleton h-20 rounded-xl"></div>
+          <div class="skeleton h-20 rounded-xl"></div>
+          <div class="skeleton h-20 rounded-xl"></div>
+          <div class="skeleton h-20 rounded-xl"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ROW 4: World News accordion (col-12) -->
+    <section class="grid grid-cols-1 gap-6 mb-6">
+      <div id="news-card" class="card-base p-5 stagger-card news-accordion" data-accent="rose">
+        <button id="news-header" class="w-full flex items-center justify-between text-left">
+          <div class="flex items-center gap-3 min-w-0">
+            <i data-lucide="chevron-right" id="news-chevron" class="w-4 h-4 text-slate-400 transition-transform"></i>
+            <span class="accent-dot bg-rose-400"></span>
+            <h2 class="card-title">News briefing</h2>
+            <span id="news-count" class="news-badge">—</span>
+          </div>
+          <div class="flex items-center gap-2 text-xs text-slate-500">
+            <span id="news-updated">—</span>
+            <span data-refresh="news" class="icon-btn-sm cursor-pointer"><i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i></span>
+          </div>
+        </button>
+        <div id="news-collapsible" class="hidden mt-4">
+          <div id="news-chips" class="flex flex-wrap gap-2 mb-4"></div>
+          <div id="news-body" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div class="skeleton h-40 rounded-xl"></div>
+            <div class="skeleton h-40 rounded-xl"></div>
+            <div class="skeleton h-40 rounded-xl"></div>
+            <div class="skeleton h-40 rounded-xl"></div>
+          </div>
         </div>
       </div>
     </section>
@@ -269,20 +281,22 @@
     </div>
   </div>
 
-  <!-- Location modal -->
-  <div id="location-modal" class="modal-backdrop hidden">
+  <!-- Cities modal -->
+  <div id="cities-modal" class="modal-backdrop hidden">
     <div class="modal-panel">
       <div class="flex items-center justify-between mb-4">
-        <h3 class="text-lg font-bold">Set location</h3>
-        <button id="location-close" class="icon-btn-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
+        <h3 class="text-lg font-bold">Manage cities</h3>
+        <button id="cities-close" class="icon-btn-sm"><i data-lucide="x" class="w-4 h-4"></i></button>
       </div>
-      <p class="text-sm text-slate-400 mb-3">Allow geolocation, or enter coordinates manually.</p>
-      <button id="location-detect" class="w-full pill-btn justify-center mb-3"><i data-lucide="locate-fixed" class="w-4 h-4"></i> Detect my location</button>
-      <div class="grid grid-cols-2 gap-2">
-        <input id="lat-input" placeholder="Latitude" class="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm" />
-        <input id="lon-input" placeholder="Longitude" class="bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm" />
+      <p class="text-sm text-slate-400 mb-3">Add cities to switch between. "Current location" always uses your device's GPS.</p>
+      <div class="relative mb-3">
+        <input id="city-input" type="text" placeholder="Search a city (e.g. Miami)" class="w-full bg-slate-800 border border-slate-700 rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-indigo-400" autocomplete="off" />
+        <div id="city-suggestions" class="hidden absolute left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-md max-h-56 overflow-y-auto z-10"></div>
       </div>
-      <button id="location-save" class="w-full pill-btn justify-center mt-3 bg-indigo-500 hover:bg-indigo-400 text-white border-indigo-400">Save coordinates</button>
+      <div id="city-list" class="space-y-2 max-h-72 overflow-y-auto"></div>
+      <div class="flex justify-end gap-2 mt-4 pt-3 border-t border-slate-800">
+        <button id="cities-save" class="pill-btn bg-indigo-500 hover:bg-indigo-400 text-white border-indigo-400">Done</button>
+      </div>
     </div>
   </div>
 
